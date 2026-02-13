@@ -1,7 +1,7 @@
 'use server'
 
 import { createAdminClient } from '@/lib/supabase/admin'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, unstable_noStore as noStore } from 'next/cache'
 
 interface Challenge {
     id?: string
@@ -15,6 +15,7 @@ interface Challenge {
     end_date: string
     type: 'daily' | 'weekly'
     bg_color: string
+    mascot?: string
 }
 
 export async function createChallengeAdmin(data: Challenge) {
@@ -62,6 +63,7 @@ export async function deleteChallengeAdmin(id: string) {
 }
 
 export async function getChallengesAdmin() {
+    noStore()
     const supabase = createAdminClient()
     // Admin client bypasses RLS, so this should return all challenges even if RLS key logic is tricky
     const { data, error } = await supabase

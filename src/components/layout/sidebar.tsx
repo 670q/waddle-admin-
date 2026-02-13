@@ -16,7 +16,7 @@ import {
 
 } from 'lucide-react'
 
-const sidebarItems = [
+export const sidebarItems = [
     {
         title: 'Overview',
         href: '/dashboard',
@@ -47,11 +47,6 @@ const sidebarItems = [
         href: '/dashboard/admins',
         icon: ShieldCheck,
     },
-    //   {
-    //     title: 'Settings',
-    //     href: '/dashboard/settings',
-    //     icon: Settings,
-    //   },
     {
         title: 'Settings',
         href: '/dashboard/settings',
@@ -68,7 +63,7 @@ export function Sidebar() {
     const pathname = usePathname()
 
     return (
-        <div className="flex flex-col h-full border-r bg-card">
+        <div className="hidden lg:flex flex-col h-full border-r bg-card">
             <div className="h-14 flex items-center px-6 border-b">
                 <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
                     <span className="text-xl">Waddle Admin</span>
