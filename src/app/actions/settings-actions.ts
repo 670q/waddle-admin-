@@ -9,18 +9,23 @@ export interface AppConfig {
 }
 
 export async function getAppConfig() {
-    const supabase = createAdminClient()
-    const { data, error } = await supabase
-        .from('app_config')
-        .select('*')
-        .order('key', { ascending: true })
+    try {
+        const supabase = createAdminClient()
+        const { data, error } = await supabase
+            .from('app_config')
+            .select('*')
+            .order('key', { ascending: true })
 
-    if (error) {
+        if (error) {
+            console.error('Error fetching app config:', error)
+            return []
+        }
+
+        return data as AppConfig[]
+    } catch (error) {
         console.error('Error fetching app config:', error)
         return []
     }
-
-    return data as AppConfig[]
 }
 
 export async function updateAppConfig(key: string, value: string) {

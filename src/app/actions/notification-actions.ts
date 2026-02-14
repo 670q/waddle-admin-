@@ -36,16 +36,21 @@ export async function createAnnouncementAdmin(data: Omit<Announcement, 'id' | 'c
 }
 
 export async function getAnnouncementsAdmin() {
-    const supabase = createAdminClient()
-    const { data, error } = await supabase
-        .from('announcements')
-        .select('*')
-        .order('created_at', { ascending: false })
+    try {
+        const supabase = createAdminClient()
+        const { data, error } = await supabase
+            .from('announcements')
+            .select('*')
+            .order('created_at', { ascending: false })
 
-    if (error) {
+        if (error) {
+            console.error('Error fetching announcements:', error)
+            return []
+        }
+
+        return data as Announcement[]
+    } catch (error) {
         console.error('Error fetching announcements:', error)
         return []
     }
-
-    return data
 }
