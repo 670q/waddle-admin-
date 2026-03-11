@@ -32,6 +32,8 @@ interface Challenge {
     type: 'daily' | 'weekly'
     bg_color: string
     mascot?: string
+    joined_count_mode?: 'real' | 'random' | 'custom'
+    joined_count?: number | null
 }
 
 interface ChallengeDialogProps {
@@ -55,8 +57,11 @@ export function ChallengeDialog({ challenge, trigger, onSuccess }: ChallengeDial
         start_date: '',
         end_date: '',
         bg_color: '#3b82f6',
-        mascot: 'idle'
+        mascot: 'idle',
+        joined_count_mode: 'random',
+        joined_count: null,
     })
+    const [applyToAll, setApplyToAll] = useState(false)
     const router = useRouter()
 
     useEffect(() => {
@@ -67,7 +72,9 @@ export function ChallengeDialog({ challenge, trigger, onSuccess }: ChallengeDial
                 title_en: challenge.title_en || '',
                 description_ar: challenge.description_ar || '',
                 description_en: challenge.description_en || '',
-                mascot: challenge.mascot || 'idle'
+                mascot: challenge.mascot || 'idle',
+                joined_count_mode: challenge.joined_count_mode || 'random',
+                joined_count: challenge.joined_count ?? null,
             })
         }
     }, [challenge])
@@ -109,9 +116,9 @@ export function ChallengeDialog({ challenge, trigger, onSuccess }: ChallengeDial
 
         try {
             if (challenge?.id) {
-                await updateChallengeAdmin(challenge.id, formData as Challenge)
+                await updateChallengeAdmin(challenge.id, formData as Challenge, applyToAll)
             } else {
-                await createChallengeAdmin(formData as Challenge)
+                await createChallengeAdmin(formData as Challenge, applyToAll)
             }
 
             setOpen(false)
@@ -254,29 +261,84 @@ export function ChallengeDialog({ challenge, trigger, onSuccess }: ChallengeDial
                         </div>
                     </div>
 
+                    {/* Participant Count Mode */}
+                    <div className="grid grid-cols-4 items-start gap-4">
+                        <Label className="text-right pt-2">Participants</Label>
+                        <div className="col-span-3 space-y-2">
+                            <div className="flex gap-2">
+                                {(['random', 'real', 'custom'] as const).map((mode) => (
+                                    <button
+                                        key={mode}
+                                        type="button"
+                                        onClick={() => setFormData({ ...formData, joined_count_mode: mode })}
+                                        className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-all ${formData.joined_count_mode === mode
+                                            ? 'bg-blue-600 text-white border-blue-600'
+                                            : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                                            }`}
+                                    >
+                                        {mode === 'random' ? '🎲 Random' : mode === 'real' ? '👥 Real' : '✏️ Custom'}
+                                    </button>
+                                ))}
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                                {formData.joined_count_mode === 'random' && 'Random number between 10-9999 (stable per challenge)'}
+                                {formData.joined_count_mode === 'real' && 'Shows the actual number of users who joined'}
+                                {formData.joined_count_mode === 'custom' && 'Set a specific number manually'}
+                            </p>
+                            {formData.joined_count_mode === 'custom' && (
+                                <Input
+                                    type="number"
+                                    min={0}
+                                    max={99999}
+                                    placeholder="Enter participant count"
+                                    value={formData.joined_count ?? ''}
+                                    onChange={(e) => setFormData({ ...formData, joined_count: e.target.value ? parseInt(e.target.value) : null })}
+                                />
+                            )}
+
+                            {/* Apply to All Checkbox */}
+                            <div className="flex items-center space-x-2 mt-3 pt-3 border-t">
+                                <input
+                                    type="checkbox"
+                                    id="applyToAll"
+                                    checked={applyToAll}
+                                    onChange={(e) => setApplyToAll(e.target.checked)}
+                                    className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                                />
+                                <Label htmlFor="applyToAll" className="text-sm font-medium text-slate-700 cursor-pointer">
+                                    Apply these participant settings to ALL challenges
+                                </Label>
+                            </div>
+                        </div>
+                    </div>
+
                     <div className="grid grid-cols-4 items-start gap-4">
                         <Label className="text-right pt-2">Mascot</Label>
                         <div className="col-span-3 grid grid-cols-4 gap-2">
-                            {['wave', 'thinking', 'celebrate', 'cool', 'fishing', 'sleeping', 'confused', 'paywall'].map((m) => (
+                            {[
+                                { id: 'wave', src: '/mascot/a1.png', label: 'Wave' },
+                                { id: 'thinking', src: '/mascot/a2.png', label: 'Thinking' },
+                                { id: 'celebrate', src: '/mascot/a5.png', label: 'Celebrate' },
+                                { id: 'cool', src: '/mascot/a6.png', label: 'Cool' },
+                                { id: 'fishing', src: '/mascot/a7.png', label: 'Fishing' },
+                                { id: 'sleeping', src: '/mascot/a8.png', label: 'Sleeping' },
+                                { id: 'confused', src: '/mascot/a9.png', label: 'Confused' },
+                                { id: 'paywall', src: '/mascot/paywall.png', label: 'Paywall' }
+                            ].map((m) => (
                                 <div
-                                    key={m}
-                                    onClick={() => setFormData({ ...formData, mascot: m })}
+                                    key={m.id}
+                                    onClick={() => setFormData({ ...formData, mascot: m.id })}
                                     className={`
-                                        cursor-pointer rounded-md border p-2 text-center text-xs capitalize transition-all
-                                        ${formData.mascot === m ? 'border-purple-500 bg-purple-50 ring-1 ring-purple-500' : 'border-slate-200 hover:bg-slate-50'}
+                                        cursor-pointer rounded-md border p-2 text-center text-xs transition-all flex flex-col items-center justify-center
+                                        ${formData.mascot === m.id ? 'border-purple-500 bg-purple-50 ring-1 ring-purple-500' : 'border-slate-200 hover:bg-slate-50'}
                                     `}
                                 >
-                                    {/* Ideally we show the image here, but for now just text/icon mapping */}
-                                    <span className="block mb-1 text-xl">
-                                        {m === 'wave' ? '👋' :
-                                            m === 'thinking' ? '🤔' :
-                                                m === 'celebrate' ? '🎉' :
-                                                    m === 'cool' ? '😎' :
-                                                        m === 'fishing' ? '🎣' :
-                                                            m === 'sleeping' ? '😴' :
-                                                                m === 'confused' ? '😵' : '🔒'}
-                                    </span>
-                                    {m}
+                                    <img
+                                        src={m.src}
+                                        alt={m.label}
+                                        className="h-10 w-10 object-contain mb-1"
+                                    />
+                                    <span>{m.label}</span>
                                 </div>
                             ))}
                         </div>

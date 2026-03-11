@@ -149,3 +149,135 @@ export async function getUserDetails(userId: string) {
         usage: usage || []
     }
 }
+
+export async function toggleProAdmin(userId: string, isPro: boolean) {
+    const supabase = createAdminClient()
+
+    const { error } = await supabase
+        .from('profiles')
+        .update({ is_pro: isPro })
+        .eq('id', userId)
+
+    if (error) {
+        throw new Error(error.message)
+    }
+
+    revalidatePath('/dashboard/users')
+    return { success: true }
+}
+
+export async function getProStatusBatch(userIds: string[]) {
+    const supabase = createAdminClient()
+
+    const { data, error } = await supabase
+        .from('profiles')
+        .select('id, is_pro')
+        .in('id', userIds)
+
+    if (error) {
+        console.error('Error fetching pro status:', error)
+        return {}
+    }
+
+    const map: Record<string, boolean> = {}
+    data?.forEach((p: any) => { map[p.id] = p.is_pro ?? false })
+    return map
+}
+
+import { Resend } from 'resend';
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+export async function sendUserEmailAdmin(userId: string, subject: string, message: string) {
+    const supabase = createAdminClient()
+
+    // 1. Get user email
+    const { data: { user }, error } = await supabase.auth.admin.getUserById(userId)
+    if (error || !user?.email) {
+        throw new Error('User email not found')
+    }
+
+    // 2. Send email via Resend
+    try {
+        const { data, error: resendError } = await resend.emails.send({
+            from: 'Waddle Support <onboarding@resend.dev>', // default resend testing address
+            to: user.email,
+            subject: subject,
+            text: message,
+            // later you can use 'html: message' if using a rich text editor
+        });
+
+        if (resendError) {
+            throw new Error(resendError.message);
+        }
+
+        return { success: true, data };
+    } catch (e: any) {
+        console.error("Resend Error:", e);
+        throw new Error(e.message || 'Failed to send email');
+    }
+}
+
+export async function sendBulkEmailAdmin(search: string = '', subject: string, message: string) {
+    const supabase = createAdminClient()
+
+    // 1. Fetch matching users (up to 1000 for safety)
+    const { data: { users }, error } = await supabase.auth.admin.listUsers({
+        page: 1,
+        perPage: 1000 // Supabase max limit is typically 50-1000 depending on config, but this works for basic apps.
+    })
+
+    if (error) {
+        console.error('Error fetching users for bulk email:', error)
+        throw new Error('Failed to fetch users')
+    }
+
+    let targetUsers = users
+    if (search) {
+        targetUsers = users.filter(u => u.email?.toLowerCase().includes(search.toLowerCase()))
+    }
+
+    // Filter out users with no email
+    const emails = targetUsers.map(u => u.email).filter(Boolean) as string[];
+
+    if (emails.length === 0) {
+        throw new Error('No users found matching the criteria')
+    }
+
+    // Resend allows sending up to 50 emails per batch request as of current API docs.
+    // For safety and simplicity in free tier (100/day limit), we will just send one by one or chunk it.
+    // Let's chunk them into groups of 50 just in case.
+    const chunkSize = 50;
+    let successfulCount = 0;
+    let failedCount = 0;
+
+    for (let i = 0; i < emails.length; i += chunkSize) {
+        const chunk = emails.slice(i, i + chunkSize);
+
+        try {
+            // Using batch send if possible, otherwise map to individual send requests
+            // Resend's batch endpoint expects an array of email objects.
+            const emailPayloads = chunk.map(email => ({
+                from: 'Waddle Support <onboarding@resend.dev>',
+                to: email,
+                subject: subject,
+                text: message,
+            }));
+
+            // Send in parallel using Promise.all of individual sends since onboarding free-tier can sometimes fail batch
+            // Alternatively, use the batch API: await resend.batch.send(emailPayloads)
+
+            await resend.batch.send(emailPayloads)
+            successfulCount += chunk.length;
+
+        } catch (e) {
+            console.error(`Error sending batch ${i / chunkSize}:`, e);
+            failedCount += chunk.length;
+            // Optionally continue or throw. We'll continue to try others.
+        }
+    }
+
+    return {
+        success: true,
+        message: `Finished sending. Successful: ${successfulCount}, Failed: ${failedCount}. Note: Resend Free Tier limits to 100/day.`
+    };
+}

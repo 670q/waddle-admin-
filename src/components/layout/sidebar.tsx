@@ -13,7 +13,7 @@ import {
     Bell,
     CreditCard,
     Hammer,
-
+    BarChart
 } from 'lucide-react'
 
 export const sidebarItems = [
@@ -21,6 +21,11 @@ export const sidebarItems = [
         title: 'Overview',
         href: '/dashboard',
         icon: LayoutDashboard,
+    },
+    {
+        title: 'Analytics',
+        href: '/dashboard/analytics',
+        icon: BarChart,
     },
     {
         title: 'Users',

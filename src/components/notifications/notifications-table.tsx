@@ -14,14 +14,7 @@ import { CheckCheck } from 'lucide-react'
 // Note: Badge component might need installation: npx shadcn@latest add badge
 // I'll use a fallback span style for now to avoid extra installation steps unless requested.
 
-interface Announcement {
-    id: string
-    title: string
-    body: string
-    target_audience: string
-    is_sent: boolean
-    created_at: string
-}
+import { Announcement } from '@/app/actions/notification-actions'
 
 export function NotificationsTable({ announcements }: { announcements: Announcement[] }) {
     return (
@@ -63,7 +56,11 @@ export function NotificationsTable({ announcements }: { announcements: Announcem
                                     )}
                                 </TableCell>
                                 <TableCell className="text-right text-xs text-muted-foreground">
-                                    {new Date(item.created_at).toLocaleDateString()} {new Date(item.created_at).toLocaleTimeString()}
+                                    {item.created_at ? (
+                                        <>{new Date(item.created_at).toLocaleDateString()} {new Date(item.created_at).toLocaleTimeString()}</>
+                                    ) : (
+                                        'Unknown Date'
+                                    )}
                                 </TableCell>
                             </TableRow>
                         ))

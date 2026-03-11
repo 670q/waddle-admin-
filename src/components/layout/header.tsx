@@ -3,9 +3,11 @@
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
-import { LogOut } from 'lucide-react'
+import { LogOut, LayoutDashboard, Users, Ticket, BellRing, Settings, FileText, BarChart } from 'lucide-react'
 
 import { MobileSidebar } from '@/components/layout/mobile-sidebar'
+
+// (Removed misplaced navItems)
 
 export function Header() {
     const router = useRouter()

@@ -16,9 +16,11 @@ interface Challenge {
     type: 'daily' | 'weekly'
     bg_color: string
     mascot?: string
+    joined_count_mode?: 'real' | 'random' | 'custom'
+    joined_count?: number | null
 }
 
-export async function createChallengeAdmin(data: Challenge) {
+export async function createChallengeAdmin(data: Challenge, applyToAll: boolean = false) {
     const supabase = createAdminClient()
     const { error } = await supabase
         .from('challenges')
@@ -28,11 +30,24 @@ export async function createChallengeAdmin(data: Challenge) {
         throw new Error(error.message)
     }
 
+    // Bulk update participant settings for all challenges if checked
+    if (applyToAll) {
+        const { error: bulkError } = await supabase
+            .from('challenges')
+            .update({
+                joined_count_mode: data.joined_count_mode,
+                joined_count: data.joined_count
+            })
+            .neq('id', '00000000-0000-0000-0000-000000000000') // Dummy condition to update all rows
+
+        if (bulkError) console.error("Bulk update error:", bulkError)
+    }
+
     revalidatePath('/dashboard/challenges')
     return { success: true }
 }
 
-export async function updateChallengeAdmin(id: string, data: Challenge) {
+export async function updateChallengeAdmin(id: string, data: Challenge, applyToAll: boolean = false) {
     const supabase = createAdminClient()
     const { error } = await supabase
         .from('challenges')
@@ -41,6 +56,19 @@ export async function updateChallengeAdmin(id: string, data: Challenge) {
 
     if (error) {
         throw new Error(error.message)
+    }
+
+    // Bulk update participant settings for all challenges if checked
+    if (applyToAll) {
+        const { error: bulkError } = await supabase
+            .from('challenges')
+            .update({
+                joined_count_mode: data.joined_count_mode,
+                joined_count: data.joined_count
+            })
+            .neq('id', '00000000-0000-0000-0000-000000000000') // Dummy condition to update all rows
+
+        if (bulkError) console.error("Bulk update error:", bulkError)
     }
 
     revalidatePath('/dashboard/challenges')

@@ -1,8 +1,9 @@
 import { getAppConfig } from '@/app/actions/settings-actions'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { AlertTriangle, Hammer, Sparkles, CheckCircle } from 'lucide-react'
+import { AlertTriangle, Hammer, Sparkles, CheckCircle, ArrowUpCircle } from 'lucide-react'
 import { ToggleForm } from '@/components/maintenance/toggle-form'
 import { AutoChallengeForm } from '@/components/maintenance/auto-challenge-form'
+import { ForceUpdateForm } from '@/components/maintenance/force-update-form'
 
 export default async function MaintenancePage() {
     const config = await getAppConfig()
@@ -12,6 +13,7 @@ export default async function MaintenancePage() {
     const autoChallengeInterval = config.find(c => c.key === 'auto_challenge_interval_hours')?.value || '24'
     const autoChallengeType = config.find(c => c.key === 'auto_challenge_type')?.value || 'both'
     const autoChallengeLastRun = config.find(c => c.key === 'auto_challenge_last_run')?.value || null
+    const minAppVersion = config.find(c => c.key === 'min_app_version')?.value || ''
 
     return (
         <div className="flex flex-col gap-6">
@@ -54,6 +56,22 @@ export default async function MaintenancePage() {
                         </div>
                         <ToggleForm initialState={maintenanceMode} />
                     </div>
+                </CardContent>
+            </Card>
+
+            {/* App Version Control Card */}
+            <Card>
+                <CardHeader>
+                    <div className="flex items-center gap-2">
+                        <ArrowUpCircle className="h-6 w-6 text-blue-500" />
+                        <CardTitle>Force App Update</CardTitle>
+                    </div>
+                    <CardDescription>
+                        Set a minimum required app version. Older app versions will be blocked and forced to update.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <ForceUpdateForm initialVersion={minAppVersion} />
                 </CardContent>
             </Card>
 

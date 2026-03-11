@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { CheckCircle, XCircle, Calendar, Trophy, Activity } from 'lucide-react'
+import { EmailUserDialog } from '@/components/users/email-user-dialog'
 
 export default async function UserDetailsPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params
@@ -15,9 +16,12 @@ export default async function UserDetailsPage({ params }: { params: Promise<{ id
                     <h1 className="text-3xl font-bold tracking-tight">User Details</h1>
                     <p className="text-muted-foreground">{user.email}</p>
                 </div>
-                <Badge variant={(user as any).ban_duration && (user as any).ban_duration !== 'none' ? 'destructive' : 'default'}>
-                    {(user as any).ban_duration && (user as any).ban_duration !== 'none' ? 'Banned' : 'Active'}
-                </Badge>
+                <div className="flex items-center gap-4">
+                    <EmailUserDialog userId={user.id} email={user.email} />
+                    <Badge variant={(user as any).ban_duration && (user as any).ban_duration !== 'none' ? 'destructive' : 'default'}>
+                        {(user as any).ban_duration && (user as any).ban_duration !== 'none' ? 'Banned' : 'Active'}
+                    </Badge>
+                </div>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
